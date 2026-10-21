@@ -6,6 +6,7 @@ Scripts που κατεβάζουν τα ανοιχτά δεδομένα του 
 |---|---|---|---|
 | `thessaloniki_loader.py` | [opendata.thessaloniki.gr](https://opendata.thessaloniki.gr/el) | DKAN, κατάλογος DCAT στο `/data.json` | `opendata_thessaloniki/` |
 | `datagovgr_loader.py` | [data.gov.gr](https://data.gov.gr) | CKAN API v3 (`package_search`) | `datagov_thessaloniki/` |
+| `geoservices_loader.py` | Υπηρεσίες χαρτών του Δήμου (βλ. [παρακάτω](#γεωχωρικά-layers)) | WFS 2.0 και ArcGIS REST | `geoservices_thessaloniki/` |
 
 **Ποια πηγή να χρησιμοποιήσω;** Το opendata.thessaloniki.gr είναι η αρχική πηγή: το data.gov.gr
 αντιγράφει (harvest) τα datasets από εκεί, έχει λιγότερα και συχνά χωρίς δηλωμένη άδεια.
@@ -58,6 +59,28 @@ opendata_thessaloniki/
 
 Ο φάκελος `datagov_thessaloniki/` έχει την ίδια δομή με `datagov_catalog.json`.
 
+## Γεωχωρικά layers
+
+Πολλά γεωχωρικά datasets δημοσιεύονται ως υπηρεσίες χαρτών (WMS) αντί για αρχεία. Το WMS δίνει
+μόνο εικόνα του χάρτη, αλλά οι ίδιοι servers δίνουν και τα πραγματικά δεδομένα (σημεία, γραμμές,
+πολύγωνα με τα στοιχεία τους). Το `geoservices_loader.py` τα κατεβάζει σε GeoJSON (WGS84 / EPSG:4326):
+
+- **WFS** του [sdi.thessaloniki.gr](https://sdi.thessaloniki.gr/geoserver/wfs): όλα τα δημόσια layers.
+- **ArcGIS REST** του [maps.thessaloniki.gr](https://maps.thessaloniki.gr/server/rest/services):
+  μόνο οι υπηρεσίες που αναφέρει ο κατάλογος του opendata.thessaloniki.gr.
+
+```bash
+python geoservices_loader.py                    # και οι δύο υπηρεσίες
+python geoservices_loader.py --source wfs       # μόνο WFS
+python geoservices_loader.py --skip-existing    # συνέχιση μετά από διακοπή
+```
+
+Οι υπηρεσίες δεν δίνουν ημερομηνία τροποποίησης, οπότε κάθε εκτέλεση ξανακατεβάζει όλα τα layers.
+Ο κατάλογος `geoservices_catalog.json` έχει για κάθε layer την πηγή, τον τίτλο, το πλήθος features και το αρχείο.
+
+Για απλή προβολή χωρίς λήψη, τα ίδια URLs ανοίγουν απευθείας στο QGIS
+(Layer → Add Layer → Add WFS Layer / Add ArcGIS REST Server Layer).
+
 ## Πώς δουλεύει
 
 - Σε κάθε εκτέλεση κατεβαίνει ξανά ο κατάλογος, οπότε νέα datasets και αρχεία εμφανίζονται αυτόματα.
@@ -68,8 +91,9 @@ opendata_thessaloniki/
 
 ## Περιορισμοί
 
-- **Υπηρεσίες χαρτών** (WMS, WFS, ESRI REST) δεν κατεβαίνουν, γιατί δεν είναι αρχεία.
-  Τα ίδια layers υπάρχουν συνήθως και ως GeoJSON / SHP / KML.
+- **Υπηρεσίες χαρτών** (WMS, WFS, ESRI REST) παραλείπονται από τους δύο πρώτους loaders, γιατί δεν
+  είναι αρχεία. Τα δεδομένα τους τα κατεβάζει το `geoservices_loader.py`.
+- **Vector tiles** (π.χ. τοπογραφικό υπόβαθρο) δεν κατεβαίνουν: είναι υπόβαθρο για web χάρτες, όχι dataset.
 - **Σπασμένα links στην πηγή** (π.χ. ο `gis.thessaloniki.gr` δεν υπάρχει πια) καταγράφονται στο
   `download_report.json`. Δεν διορθώνονται από εδώ.
 - **Δεν κρατιέται ιστορικό**: κάθε εκτέλεση έχει την τρέχουσα εικόνα της πηγής.

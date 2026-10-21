@@ -1,6 +1,7 @@
 # Κατεβασμένα δεδομένα (GB, ξαναπαράγονται τρέχοντας τα scripts)
 datagov_thessaloniki/
 opendata_thessaloniki/
+geoservices_thessaloniki/
 *.part
 
 # Python
